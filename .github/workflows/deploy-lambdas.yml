@@ -31,7 +31,7 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  DOTNET_VERSION: "10.0.x"
+  DOTNET_VERSION: "8.0.x"
   TARGET_FUNCTION: ${{ github.event.inputs.target_function || 'all' }}
 
 jobs:
@@ -190,7 +190,7 @@ jobs:
           dotnet lambda package \
             --project-location "$PROJECT_DIR" \
             --configuration Release \
-            --framework net10.0 \
+            --framework net8.0 \
             --output-package "$ZIP_FILE"
 
       - name: Deploy Lambda code
