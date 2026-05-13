@@ -90,35 +90,35 @@ jobs:
       matrix:
         lambda:
           - key: disable_package_payment_plans
-            project_dir: src/TravelPackagesSystem.DisablePackagePaymentPlans
+            project_dir: src/Lambdas/TravelPackagesSystem.DisablePackagePaymentPlans
             function_name: travel-packages-system-disable-package-payment-plans
 
           - key: enable_package_auto_confirm_tickets
-            project_dir: src/TravelPackagesSystem.EnablePackageAutoConfirmTickets
+            project_dir: src/Lambdas/TravelPackagesSystem.EnablePackageAutoConfirmTickets
             function_name: travel-packages-system-enable-package-auto-confirm-tickets
 
           - key: ensure_payment_option_exists
-            project_dir: src/TravelPackagesSystem.EnsurePaymentOptionExists
+            project_dir: src/Lambdas/TravelPackagesSystem.EnsurePaymentOptionExists
             function_name: travel-packages-system-ensure-payment-option-exists
 
           - key: disable_event_payment_plans
-            project_dir: src/TravelPackagesSystem.DisableEventPaymentPlans
+            project_dir: src/Lambdas/TravelPackagesSystem.DisableEventPaymentPlans
             function_name: travel-packages-system-disable-event-payment-plans
 
           - key: expire_and_block_packages
-            project_dir: src/TravelPackagesSystem.ExpireAndBlockPackages
+            project_dir: src/Lambdas/TravelPackagesSystem.ExpireAndBlockPackages
             function_name: travel-packages-system-expire-and-block-packages
 
           - key: write_package_audit_trail
-            project_dir: src/TravelPackagesSystem.WritePackageAuditTrail
+            project_dir: src/Lambdas/TravelPackagesSystem.WritePackageAuditTrail
             function_name: travel-packages-system-write-package-audit-trail
 
           - key: lambda1
-            project_dir: src/lambda1
+            project_dir: src/Lambdas/Lambda1
             function_name: lambda1
 
           - key: lambda2
-            project_dir: src/lambda2
+            project_dir: src/Lambdas/Lambda2
             function_name: lambda2
 
     steps:
