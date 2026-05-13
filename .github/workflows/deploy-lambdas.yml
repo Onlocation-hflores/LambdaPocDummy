@@ -1,4 +1,4 @@
-name: Deploy  Lambdas
+name: Deploy Lambdas
 
 on:
   push:
@@ -6,15 +6,20 @@ on:
       - main
     paths:
       - "src/**"
+      - "*.sln"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - ".github/workflows/deploy-lambdas.yml"
 
   workflow_dispatch:
     inputs:
       target_function:
         description: "Lambda function to deploy"
         required: true
-        default: "all"
+        default: "auto"
         type: choice
         options:
+          - auto
           - all
           - disable_package_payment_plans
           - enable_package_auto_confirm_tickets
@@ -32,12 +37,158 @@ permissions:
 env:
   AWS_REGION: us-east-1
   DOTNET_VERSION: "8.0.x"
-  TARGET_FUNCTION: ${{ github.event.inputs.target_function || 'all' }}
+  TARGET_FUNCTION: ${{ github.event.inputs.target_function || 'auto' }}
 
 jobs:
-  test:
-    name: Restore, build, and test
+  detect-changes:
+    name: Detect changed Lambda projects
     runs-on: ubuntu-latest
+
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed Lambda projects
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ALL_LAMBDAS='[
+            {
+              "key": "disable_package_payment_plans",
+              "project_dir": "src/Lambdas/TravelPackagesSystem.DisablePackagePaymentPlans",
+              "function_name": "travel-packages-system-disable-package-payment-plans"
+            },
+            {
+              "key": "enable_package_auto_confirm_tickets",
+              "project_dir": "src/Lambdas/TravelPackagesSystem.EnablePackageAutoConfirmTickets",
+              "function_name": "travel-packages-system-enable-package-auto-confirm-tickets"
+            },
+            {
+              "key": "ensure_payment_option_exists",
+              "project_dir": "src/Lambdas/TravelPackagesSystem.EnsurePaymentOptionExists",
+              "function_name": "travel-packages-system-ensure-payment-option-exists"
+            },
+            {
+              "key": "disable_event_payment_plans",
+              "project_dir": "src/Lambdas/TravelPackagesSystem.DisableEventPaymentPlans",
+              "function_name": "travel-packages-system-disable-event-payment-plans"
+            },
+            {
+              "key": "expire_and_block_packages",
+              "project_dir": "src/Lambdas/TravelPackagesSystem.ExpireAndBlockPackages",
+              "function_name": "travel-packages-system-expire-and-block-packages"
+            },
+            {
+              "key": "write_package_audit_trail",
+              "project_dir": "src/Lambdas/TravelPackagesSystem.WritePackageAuditTrail",
+              "function_name": "travel-packages-system-write-package-audit-trail"
+            },
+            {
+              "key": "lambda1",
+              "project_dir": "src/Lambdas/Lambda1",
+              "function_name": "travel-packages-system-lambda1"
+            },
+            {
+              "key": "lambda2",
+              "project_dir": "src/Lambdas/Lambda2",
+              "function_name": "travel-packages-system-lambda2"
+            }
+          ]'
+
+          echo "Target function: $TARGET_FUNCTION"
+
+          if [ "$TARGET_FUNCTION" = "all" ]; then
+            echo "Manual selection is all. Deploying all Lambdas."
+            MATRIX="$ALL_LAMBDAS"
+
+          elif [ "$TARGET_FUNCTION" != "auto" ] && [ "$TARGET_FUNCTION" != "" ]; then
+            echo "Manual selection is specific Lambda: $TARGET_FUNCTION"
+            MATRIX=$(echo "$ALL_LAMBDAS" | jq -c --arg key "$TARGET_FUNCTION" '[.[] | select(.key == $key)]')
+
+          else
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "Manual run with auto selected. Comparing HEAD~1 to HEAD."
+              BASE_SHA="$(git rev-parse HEAD~1)"
+              HEAD_SHA="${{ github.sha }}"
+            else
+              BASE_SHA="${{ github.event.before }}"
+              HEAD_SHA="${{ github.sha }}"
+
+              if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+                echo "No valid before SHA found. Falling back to HEAD~1."
+                BASE_SHA="$(git rev-parse HEAD~1)"
+              fi
+            fi
+
+            echo "Comparing changes from $BASE_SHA to $HEAD_SHA"
+
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA" > changed_files.txt
+
+            echo "Changed files:"
+            cat changed_files.txt
+
+            CHANGED_JSON=$(jq -R -s -c 'split("\n")[:-1]' changed_files.txt)
+
+            SHARED_CHANGED=$(echo "$CHANGED_JSON" | jq -r '
+              any(.[];
+                startswith("src/Shared/") or
+                startswith("src/Lambdas/Shared/") or
+                startswith("src/Common/") or
+                startswith("src/Lambdas/Common/") or
+                endswith(".sln") or
+                . == "Directory.Build.props" or
+                . == "Directory.Packages.props"
+              )
+            ')
+
+            if [ "$SHARED_CHANGED" = "true" ]; then
+              echo "Shared, common, solution, or build configuration change detected. Deploying all Lambdas."
+              MATRIX="$ALL_LAMBDAS"
+            else
+              MATRIX=$(echo "$ALL_LAMBDAS" | jq -c --argjson changed "$CHANGED_JSON" '
+                [
+                  .[] |
+                  select(
+                    . as $lambda |
+                    any($changed[]; startswith($lambda.project_dir + "/"))
+                  )
+                ]
+              ')
+            fi
+          fi
+
+          COUNT=$(echo "$MATRIX" | jq 'length')
+
+          echo "Detected Lambda count: $COUNT"
+          echo "Matrix: $MATRIX"
+
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+          if [ "$COUNT" -gt 0 ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    name: Restore, build, and test changed projects
+    runs-on: ubuntu-latest
+    needs: detect-changes
+
+    if: needs.detect-changes.outputs.has_changes == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        lambda: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 
     steps:
       - name: Checkout repository
@@ -48,123 +199,100 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
+      - name: Restore Lambda project
         shell: bash
         run: |
           set -euo pipefail
 
-          if ls *.sln >/dev/null 2>&1; then
-            echo "Solution file found. Running dotnet restore."
-            dotnet restore
-          else
-            echo "No solution file found. Restoring all src projects."
-            find src -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
-              echo "Restoring $project"
-              dotnet restore "$project"
-            done
+          PROJECT_DIR="${{ matrix.lambda.project_dir }}"
+
+          if [ ! -d "$PROJECT_DIR" ]; then
+            echo "ERROR: Project directory not found: $PROJECT_DIR"
+            exit 1
           fi
 
-      - name: Build
+          PROJECT_FILE=$(find "$PROJECT_DIR" -maxdepth 1 -name "*.csproj" | head -n 1)
+
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "ERROR: No .csproj file found in: $PROJECT_DIR"
+            exit 1
+          fi
+
+          echo "Restoring $PROJECT_FILE"
+          dotnet restore "$PROJECT_FILE"
+
+      - name: Build Lambda project
         shell: bash
         run: |
           set -euo pipefail
 
-          if ls *.sln >/dev/null 2>&1; then
-            echo "Solution file found. Running dotnet build."
-            dotnet build --configuration Release --no-restore
-          else
-            echo "No solution file found. Building all src projects."
-            find src -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
-              echo "Building $project"
-              dotnet build "$project" --configuration Release --no-restore
-            done
+          PROJECT_DIR="${{ matrix.lambda.project_dir }}"
+          PROJECT_FILE=$(find "$PROJECT_DIR" -maxdepth 1 -name "*.csproj" | head -n 1)
+
+          echo "Building $PROJECT_FILE"
+          dotnet build "$PROJECT_FILE" \
+            --configuration Release \
+            --no-restore
+
+      - name: Run matching tests if present
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          KEY="${{ matrix.lambda.key }}"
+
+          echo "Looking for tests related to $KEY"
+
+          TEST_PROJECTS=$(find tests -name "*.csproj" 2>/dev/null | grep -i "$KEY" || true)
+
+          if [ -z "$TEST_PROJECTS" ]; then
+            echo "No matching test projects found for $KEY. Skipping tests for this Lambda."
+            exit 0
           fi
+
+          for test_project in $TEST_PROJECTS; do
+            echo "Running tests for $test_project"
+            dotnet test "$test_project" \
+              --configuration Release \
+              --verbosity normal
+          done
 
   deploy:
     name: Deploy ${{ matrix.lambda.key }}
     runs-on: ubuntu-latest
-    needs: test
+    needs:
+      - detect-changes
+      - test
+
+    if: needs.detect-changes.outputs.has_changes == 'true'
 
     strategy:
       fail-fast: false
       matrix:
-        lambda:
-          - key: disable_package_payment_plans
-            project_dir: src/Lambdas/TravelPackagesSystem.DisablePackagePaymentPlans
-            function_name: travel-packages-system-disable-package-payment-plans
-
-          - key: enable_package_auto_confirm_tickets
-            project_dir: src/Lambdas/TravelPackagesSystem.EnablePackageAutoConfirmTickets
-            function_name: travel-packages-system-enable-package-auto-confirm-tickets
-
-          - key: ensure_payment_option_exists
-            project_dir: src/Lambdas/TravelPackagesSystem.EnsurePaymentOptionExists
-            function_name: travel-packages-system-ensure-payment-option-exists
-
-          - key: disable_event_payment_plans
-            project_dir: src/Lambdas/TravelPackagesSystem.DisableEventPaymentPlans
-            function_name: travel-packages-system-disable-event-payment-plans
-
-          - key: expire_and_block_packages
-            project_dir: src/Lambdas/TravelPackagesSystem.ExpireAndBlockPackages
-            function_name: travel-packages-system-expire-and-block-packages
-
-          - key: write_package_audit_trail
-            project_dir: src/Lambdas/TravelPackagesSystem.WritePackageAuditTrail
-            function_name: travel-packages-system-write-package-audit-trail
-
-          - key: lambda1
-            project_dir: src/Lambdas/Lambda1
-            function_name: travel-packages-system-lambda1
-
-          - key: lambda2
-            project_dir: src/Lambdas/Lambda2
-            function_name: travel-packages-system-lambda2
+        lambda: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 
     steps:
-      - name: Check whether this Lambda should deploy
-        id: should_deploy
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "Target function: $TARGET_FUNCTION"
-          echo "Current matrix function: ${{ matrix.lambda.key }}"
-
-          if [ "$TARGET_FUNCTION" = "all" ] || [ "$TARGET_FUNCTION" = "${{ matrix.lambda.key }}" ]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-            echo "This Lambda will be deployed."
-          else
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping this Lambda."
-          fi
-
       - name: Checkout repository
-        if: steps.should_deploy.outputs.deploy == 'true'
         uses: actions/checkout@v4
 
       - name: Setup .NET SDK
-        if: steps.should_deploy.outputs.deploy == 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Install AWS Lambda .NET Tools
-        if: steps.should_deploy.outputs.deploy == 'true'
         shell: bash
         run: |
           dotnet tool install -g Amazon.Lambda.Tools
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Configure AWS credentials
-        if: steps.should_deploy.outputs.deploy == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Package Lambda
-        if: steps.should_deploy.outputs.deploy == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -194,7 +322,6 @@ jobs:
             --output-package "$ZIP_FILE"
 
       - name: Deploy Lambda code
-        if: steps.should_deploy.outputs.deploy == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -215,9 +342,7 @@ jobs:
 
           echo "Deployment completed for $FUNCTION_NAME"
 
-
       - name: Summary
-        if: steps.should_deploy.outputs.deploy == 'true'
         shell: bash
         run: |
           echo "Deployment completed."
@@ -225,3 +350,15 @@ jobs:
           echo "Lambda function: ${{ matrix.lambda.function_name }}"
           echo "Project directory: ${{ matrix.lambda.project_dir }}"
           echo "Git SHA: $GITHUB_SHA"
+
+  no-changes:
+    name: No Lambda changes detected
+    runs-on: ubuntu-latest
+    needs: detect-changes
+
+    if: needs.detect-changes.outputs.has_changes != 'true'
+
+    steps:
+      - name: Nothing to deploy
+        run: |
+          echo "No Lambda project changes detected. Nothing to build or deploy."
