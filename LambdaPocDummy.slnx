@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path="build_lambda1.yaml" />
+  </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Lambdas/">
     <Project Path="src/Lambdas/Lambda1/Lambda1.csproj" />
