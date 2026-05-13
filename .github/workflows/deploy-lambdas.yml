@@ -246,8 +246,8 @@ jobs:
               --verbosity normal
           done
 
-  deploy:
-    name: Deploy ${{ matrix.lambda.key }}
+  Deploy:
+    name: ${{ matrix.lambda.key }}
     runs-on: ubuntu-latest
     needs:
       - detect-changes
