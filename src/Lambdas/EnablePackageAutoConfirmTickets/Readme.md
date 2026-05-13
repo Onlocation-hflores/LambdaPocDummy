@@ -38,12 +38,12 @@ If already installed check if new version is available.
 
 Execute unit tests
 ```
-    cd "TravelPackagesSystem.EnablePackageAutoConfirmTickets/test/TravelPackagesSystem.EnablePackageAutoConfirmTickets.Tests"
+    cd "EnablePackageAutoConfirmTickets/test/EnablePackageAutoConfirmTickets.Tests"
     dotnet test
 ```
 
 Deploy function to AWS Lambda
 ```
-    cd "TravelPackagesSystem.EnablePackageAutoConfirmTickets/src/TravelPackagesSystem.EnablePackageAutoConfirmTickets"
+    cd "EnablePackageAutoConfirmTickets/src/EnablePackageAutoConfirmTickets"
     dotnet lambda deploy-function
 ```

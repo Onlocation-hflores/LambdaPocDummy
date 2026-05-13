@@ -12,5 +12,5 @@
   "function-runtime": "dotnet10",
   "function-memory-size": 512,
   "function-timeout": 30,
-  "function-handler": "TravelPackagesSystem.WritePackageAuditTrail::TravelPackagesSystem.WritePackageAuditTrail.Function::FunctionHandler"
+  "function-handler": "DisableEventPaymentPlans::DisableEventPaymentPlans.Function::FunctionHandler"
 }

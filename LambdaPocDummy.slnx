@@ -5,11 +5,12 @@
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Lambdas/">
-    <Project Path="src/Lambdas/TravelPackagesSystem.DisableEventPaymentPlans/TravelPackagesSystem.DisableEventPaymentPlans.csproj" />
-    <Project Path="src/Lambdas/TravelPackagesSystem.DisablePackagePaymentPlans/TravelPackagesSystem.DisablePackagePaymentPlans.csproj" />
-    <Project Path="src/Lambdas/TravelPackagesSystem.EnablePackageAutoConfirmTickets/TravelPackagesSystem.EnablePackageAutoConfirmTickets.csproj" />
-    <Project Path="src/Lambdas/TravelPackagesSystem.ExpireAndBlockPackages/TravelPackagesSystem.ExpireAndBlockPackages.csproj" />
-    <Project Path="src/Lambdas/TravelPackagesSystem.WritePackageAuditTrail/TravelPackagesSystem.WritePackageAuditTrail.csproj" />
+    <Project Path="src/Lambdas/DisableEventPaymentPlans/DisableEventPaymentPlans.csproj" />
+    <Project Path="src/Lambdas/DisablePackagePaymentPlans/DisablePackagePaymentPlans.csproj" />
+    <Project Path="src/Lambdas/EnablePackageAutoConfirmTickets/EnablePackageAutoConfirmTickets.csproj" />
+    <Project Path="src/Lambdas/EnsurePaymentOptionExists/EnsurePaymentOptionExists.csproj" />
+    <Project Path="src/Lambdas/ExpireAndBlockPackages/ExpireAndBlockPackages.csproj" />
+    <Project Path="src/Lambdas/WritePackageAuditTrail/WritePackageAuditTrail.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Shared.Infrastructure/Shared.Infrastructure.csproj" />

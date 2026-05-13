@@ -38,12 +38,12 @@ If already installed check if new version is available.
 
 Execute unit tests
 ```
-    cd "TravelPackagesSystem.ExpireAndBlockPackages/test/TravelPackagesSystem.ExpireAndBlockPackages.Tests"
+    cd "DisablePackagePaymentPlans/test/DisablePackagePaymentPlans.Tests"
     dotnet test
 ```
 
 Deploy function to AWS Lambda
 ```
-    cd "TravelPackagesSystem.ExpireAndBlockPackages/src/TravelPackagesSystem.ExpireAndBlockPackages"
+    cd "DisablePackagePaymentPlans/src/DisablePackagePaymentPlans"
     dotnet lambda deploy-function
 ```

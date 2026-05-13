@@ -38,12 +38,12 @@ If already installed check if new version is available.
 
 Execute unit tests
 ```
-    cd "TravelPackagesSystem.EnsurePaymentOptionExists/test/TravelPackagesSystem.EnsurePaymentOptionExists.Tests"
+    cd "WritePackageAuditTrail/test/WritePackageAuditTrail.Tests"
     dotnet test
 ```
 
 Deploy function to AWS Lambda
 ```
-    cd "TravelPackagesSystem.EnsurePaymentOptionExists/src/TravelPackagesSystem.EnsurePaymentOptionExists"
+    cd "WritePackageAuditTrail/src/WritePackageAuditTrail"
     dotnet lambda deploy-function
 ```
