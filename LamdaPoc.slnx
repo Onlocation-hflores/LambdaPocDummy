@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path="build_test.yaml" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Lambdas/">
+    <Project Path="Lambda1/Lambda1.csproj" />
+    <Project Path="Lambda2/Lambda2.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="domain/Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="Lambda1.Tests/Lambda1.Tests.csproj" />
+    <Project Path="Lambda2.Tests/Lambda2.Tests.csproj" />
+  </Folder>
+</Solution>
