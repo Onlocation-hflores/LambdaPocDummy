@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Lambdas/">
+    <Project Path="src/Lambdas/Lambda1/Lambda1.csproj" />
+    <Project Path="src/Lambdas/Lambda2/Lambda2.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Shared.Infrastructure/Shared.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Lambda1.Tests/Lambda1.Tests.csproj" />
+    <Project Path="tests/Lambda2.Tests/Lambda2.Tests.csproj" />
+  </Folder>
+</Solution>
