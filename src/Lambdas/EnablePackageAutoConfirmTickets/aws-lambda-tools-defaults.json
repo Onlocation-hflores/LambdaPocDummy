@@ -12,5 +12,5 @@
   "function-runtime": "dotnet10",
   "function-memory-size": 512,
   "function-timeout": 30,
-  "function-handler": "TravelPackagesSystem.EnsurePaymentOptionExists::TravelPackagesSystem.EnsurePaymentOptionExists.Function::FunctionHandler"
+  "function-handler": "EnablePackageAutoConfirmTickets::EnablePackageAutoConfirmTickets.Function::FunctionHandler"
 }

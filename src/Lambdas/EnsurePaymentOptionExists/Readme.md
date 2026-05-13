@@ -38,12 +38,12 @@ If already installed check if new version is available.
 
 Execute unit tests
 ```
-    cd "Lambda2/test/Lambda2.Tests"
+    cd "EnsurePaymentOptionExists/test/EnsurePaymentOptionExists.Tests"
     dotnet test
 ```
 
 Deploy function to AWS Lambda
 ```
-    cd "Lambda2/src/Lambda2"
+    cd "EnsurePaymentOptionExists/src/EnsurePaymentOptionExists"
     dotnet lambda deploy-function
 ```

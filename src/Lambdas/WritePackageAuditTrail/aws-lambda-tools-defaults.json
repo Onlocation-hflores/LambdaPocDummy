@@ -12,5 +12,5 @@
   "function-runtime": "dotnet10",
   "function-memory-size": 512,
   "function-timeout": 30,
-  "function-handler": "Lambda1::Lambda1.Function::FunctionHandler"
+  "function-handler": "WritePackageAuditTrail::WritePackageAuditTrail.Function::FunctionHandler"
 }
