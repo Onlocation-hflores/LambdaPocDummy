@@ -95,7 +95,7 @@ jobs:
 
           if [ "$TARGET_FUNCTION" = "all" ]; then
             echo "Manual selection is all. Deploying all Lambdas."
-            MATRIX="$ALL_LAMBDAS"
+            MATRIX=$(echo "$ALL_LAMBDAS" | jq -c '.')
 
           elif [ "$TARGET_FUNCTION" != "auto" ] && [ "$TARGET_FUNCTION" != "" ]; then
             echo "Manual selection is specific Lambda: $TARGET_FUNCTION"
@@ -139,7 +139,7 @@ jobs:
 
             if [ "$SHARED_CHANGED" = "true" ]; then
               echo "Shared, common, solution, or build configuration change detected. Deploying all Lambdas."
-              MATRIX="$ALL_LAMBDAS"
+              MATRIX=$(echo "$ALL_LAMBDAS" | jq -c '.')
             else
               MATRIX=$(echo "$ALL_LAMBDAS" | jq -c --argjson changed "$CHANGED_JSON" '
                 [
@@ -156,7 +156,8 @@ jobs:
           COUNT=$(echo "$MATRIX" | jq 'length')
 
           echo "Detected Lambda count: $COUNT"
-          echo "Matrix: $MATRIX"
+          echo "Matrix:"
+          echo "$MATRIX" | jq '.'
 
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
