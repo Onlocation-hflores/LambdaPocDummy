@@ -1,10 +1,9 @@
 using Amazon.Lambda.Core;
-using System.Text.Json;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
-namespace Lambda1;
+namespace TravelPackagesSystem.EnsurePaymentOptionExists;
 
 public class Function
 {
@@ -15,8 +14,8 @@ public class Function
     /// <param name="input">The event for the Lambda function handler to process.</param>
     /// <param name="context">The ILambdaContext that provides methods for logging and describing the Lambda environment.</param>
     /// <returns></returns>
-    public string FunctionHandler(object input, ILambdaContext context)
+    public string FunctionHandler(string input, ILambdaContext context)
     {
-        return $"{input.ToUpper()} from Lambda1";
+        return input.ToUpper();
     }
 }

@@ -1,12 +1,15 @@
 <Solution>
   <Folder Name="/.github/" />
   <Folder Name="/.github/workflows/">
-    <File Path="build_lambda1.yaml" />
+    <File Path=".github/workflows/deploy-lambdas.yml" />
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Lambdas/">
-    <Project Path="src/Lambdas/Lambda1/Lambda1.csproj" />
-    <Project Path="src/Lambdas/Lambda2/Lambda2.csproj" />
+    <Project Path="src/Lambdas/TravelPackagesSystem.DisableEventPaymentPlans/TravelPackagesSystem.DisableEventPaymentPlans.csproj" />
+    <Project Path="src/Lambdas/TravelPackagesSystem.DisablePackagePaymentPlans/TravelPackagesSystem.DisablePackagePaymentPlans.csproj" />
+    <Project Path="src/Lambdas/TravelPackagesSystem.EnablePackageAutoConfirmTickets/TravelPackagesSystem.EnablePackageAutoConfirmTickets.csproj" />
+    <Project Path="src/Lambdas/TravelPackagesSystem.ExpireAndBlockPackages/TravelPackagesSystem.ExpireAndBlockPackages.csproj" />
+    <Project Path="src/Lambdas/TravelPackagesSystem.WritePackageAuditTrail/TravelPackagesSystem.WritePackageAuditTrail.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Shared.Infrastructure/Shared.Infrastructure.csproj" />
