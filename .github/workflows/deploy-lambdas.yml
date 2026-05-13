@@ -115,11 +115,11 @@ jobs:
 
           - key: lambda1
             project_dir: src/Lambdas/Lambda1
-            function_name: lambda1
+            function_name: travel-packages-system-lambda1
 
           - key: lambda2
             project_dir: src/Lambdas/Lambda2
-            function_name: lambda2
+            function_name: travel-packages-system-lambda2
 
     steps:
       - name: Check whether this Lambda should deploy
@@ -193,35 +193,35 @@ jobs:
             --framework net10.0 \
             --output-package "$ZIP_FILE"
 
-#      - name: Deploy Lambda code
-#        if: steps.should_deploy.outputs.deploy == 'true'
-#        shell: bash
-#        run: |
-#          set -euo pipefail
-#
-#          ZIP_FILE="artifacts/${{ matrix.lambda.key }}-${GITHUB_SHA}.zip"
-#          FUNCTION_NAME="${{ matrix.lambda.function_name }}"
-#
-#          echo "Deploying $ZIP_FILE to $FUNCTION_NAME"
-#
-#          aws lambda update-function-code \
-#            --function-name "$FUNCTION_NAME" \
-#            --zip-file "fileb://$ZIP_FILE"
-#
-#          echo "Waiting for Lambda update to finish..."
-#
-#          aws lambda wait function-updated \
-#            --function-name "$FUNCTION_NAME"
-#
-#          echo "Deployment completed for $FUNCTION_NAME"
-#
-#
-#      - name: Summary
-#        if: steps.should_deploy.outputs.deploy == 'true'
-#        shell: bash
-#        run: |
-#          echo "Deployment completed."
-#          echo "Lambda key: ${{ matrix.lambda.key }}"
-#          echo "Lambda function: ${{ matrix.lambda.function_name }}"
-#          echo "Project directory: ${{ matrix.lambda.project_dir }}"
-#          echo "Git SHA: $GITHUB_SHA"
+      - name: Deploy Lambda code
+        if: steps.should_deploy.outputs.deploy == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_FILE="artifacts/${{ matrix.lambda.key }}-${GITHUB_SHA}.zip"
+          FUNCTION_NAME="${{ matrix.lambda.function_name }}"
+
+          echo "Deploying $ZIP_FILE to $FUNCTION_NAME"
+
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file "fileb://$ZIP_FILE"
+
+          echo "Waiting for Lambda update to finish..."
+
+          aws lambda wait function-updated \
+            --function-name "$FUNCTION_NAME"
+
+          echo "Deployment completed for $FUNCTION_NAME"
+
+
+      - name: Summary
+        if: steps.should_deploy.outputs.deploy == 'true'
+        shell: bash
+        run: |
+          echo "Deployment completed."
+          echo "Lambda key: ${{ matrix.lambda.key }}"
+          echo "Lambda function: ${{ matrix.lambda.function_name }}"
+          echo "Project directory: ${{ matrix.lambda.project_dir }}"
+          echo "Git SHA: $GITHUB_SHA"
