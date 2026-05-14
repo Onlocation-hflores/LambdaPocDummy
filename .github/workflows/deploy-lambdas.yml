@@ -36,6 +36,10 @@ on:
           - deploy-blue
           - deploy-green
 
+concurrency:
+  group: travel-packages-system-lambda-deploy
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
