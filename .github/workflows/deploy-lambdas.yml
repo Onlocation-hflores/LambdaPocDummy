@@ -27,6 +27,14 @@ on:
           - disable_event_payment_plans
           - expire_and_block_packages
           - write_package_audit_trail
+      operation:
+        description: "Deployment operation"
+        required: true
+        default: "deploy-blue"
+        type: choice
+        options:
+          - deploy-blue
+          - deploy-green
 
 permissions:
   id-token: write
@@ -36,6 +44,8 @@ env:
   AWS_REGION: us-east-1
   DOTNET_VERSION: "10.0.x"
   TARGET_FUNCTION: ${{ github.event.inputs.target_function || 'auto' }}
+  DEPLOYMENT_OPERATION: ${{ github.event.inputs.operation || 'deploy-blue' }}
+  CANDIDATE_ALIAS_NAME: "green"
 
 jobs:
   detect-changes:
@@ -331,10 +341,46 @@ jobs:
 
           echo "Deployment completed for $FUNCTION_NAME"
 
+      - name: Publish version and update green alias
+        if: steps.should_deploy.outputs.deploy == 'true' && env.DEPLOYMENT_OPERATION == 'deploy-green'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FUNCTION_NAME="${{ matrix.lambda.function_name }}"
+
+          echo "Publishing new Lambda version for $FUNCTION_NAME"
+
+          PUBLISHED_VERSION=$(aws lambda publish-version \
+            --function-name "$FUNCTION_NAME" \
+            --description "GitHub Actions green deployment. Commit: ${GITHUB_SHA}. Lambda key: ${{ matrix.lambda.key }}" \
+            --query 'Version' \
+            --output text)
+
+          echo "Published version: $PUBLISHED_VERSION"
+
+          echo "Updating green alias '$CANDIDATE_ALIAS_NAME' to version $PUBLISHED_VERSION"
+
+          aws lambda update-alias \
+            --function-name "$FUNCTION_NAME" \
+            --name "$CANDIDATE_ALIAS_NAME" \
+            --function-version "$PUBLISHED_VERSION" \
+            --description "Green alias updated by GitHub Actions. Commit: ${GITHUB_SHA}"
+
+          echo "Green alias updated successfully."
+
+          echo "Current green alias:"
+          aws lambda get-alias \
+            --function-name "$FUNCTION_NAME" \
+            --name "$CANDIDATE_ALIAS_NAME" \
+            --query '{Alias:Name,FunctionVersion:FunctionVersion,Description:Description}' \
+            --output table
+
       - name: Summary
         shell: bash
         run: |
           echo "Deployment completed."
+          echo "Operation: $DEPLOYMENT_OPERATION"
           echo "Lambda key: ${{ matrix.lambda.key }}"
           echo "Lambda function: ${{ matrix.lambda.function_name }}"
           echo "Project directory: ${{ matrix.lambda.project_dir }}"
