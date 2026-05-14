@@ -342,7 +342,7 @@ jobs:
           echo "Deployment completed for $FUNCTION_NAME"
 
       - name: Publish version and update green alias
-        if: steps.should_deploy.outputs.deploy == 'true' && env.DEPLOYMENT_OPERATION == 'deploy-green'
+        if: env.DEPLOYMENT_OPERATION == 'deploy-green'
         shell: bash
         run: |
           set -euo pipefail
