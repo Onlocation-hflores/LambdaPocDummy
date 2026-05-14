@@ -6,10 +6,10 @@ on:
       - main
     paths:
       - "src/**"
-      - "*.sln"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - ".github/workflows/deploy-lambdas.yml"
+#      - "*.sln"
+#      - "Directory.Build.props"
+#      - "Directory.Packages.props"
+#      - ".github/workflows/deploy-lambdas.yml"
 
   workflow_dispatch:
     inputs:
@@ -27,8 +27,6 @@ on:
           - disable_event_payment_plans
           - expire_and_block_packages
           - write_package_audit_trail
-          - lambda1
-          - lambda2
 
 permissions:
   id-token: write
@@ -36,7 +34,7 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  DOTNET_VERSION: "8.0.x"
+  DOTNET_VERSION: "10.0.x"
   TARGET_FUNCTION: ${{ github.event.inputs.target_function || 'auto' }}
 
 jobs:
@@ -63,43 +61,33 @@ jobs:
           ALL_LAMBDAS='[
             {
               "key": "disable_package_payment_plans",
-              "project_dir": "src/Lambdas/TravelPackagesSystem.DisablePackagePaymentPlans",
+              "project_dir": "src/Lambdas/DisablePackagePaymentPlans",
               "function_name": "travel-packages-system-disable-package-payment-plans"
             },
             {
               "key": "enable_package_auto_confirm_tickets",
-              "project_dir": "src/Lambdas/TravelPackagesSystem.EnablePackageAutoConfirmTickets",
+              "project_dir": "src/Lambdas/EnablePackageAutoConfirmTickets",
               "function_name": "travel-packages-system-enable-package-auto-confirm-tickets"
             },
             {
               "key": "ensure_payment_option_exists",
-              "project_dir": "src/Lambdas/TravelPackagesSystem.EnsurePaymentOptionExists",
+              "project_dir": "src/Lambdas/EnsurePaymentOptionExists",
               "function_name": "travel-packages-system-ensure-payment-option-exists"
             },
             {
               "key": "disable_event_payment_plans",
-              "project_dir": "src/Lambdas/TravelPackagesSystem.DisableEventPaymentPlans",
+              "project_dir": "src/Lambdas/DisableEventPaymentPlans",
               "function_name": "travel-packages-system-disable-event-payment-plans"
             },
             {
               "key": "expire_and_block_packages",
-              "project_dir": "src/Lambdas/TravelPackagesSystem.ExpireAndBlockPackages",
+              "project_dir": "src/Lambdas/ExpireAndBlockPackages",
               "function_name": "travel-packages-system-expire-and-block-packages"
             },
             {
               "key": "write_package_audit_trail",
-              "project_dir": "src/Lambdas/TravelPackagesSystem.WritePackageAuditTrail",
+              "project_dir": "src/Lambdas/WritePackageAuditTrail",
               "function_name": "travel-packages-system-write-package-audit-trail"
-            },
-            {
-              "key": "lambda1",
-              "project_dir": "src/Lambdas/Lambda1",
-              "function_name": "travel-packages-system-lambda1"
-            },
-            {
-              "key": "lambda2",
-              "project_dir": "src/Lambdas/Lambda2",
-              "function_name": "travel-packages-system-lambda2"
             }
           ]'
 
@@ -107,7 +95,7 @@ jobs:
 
           if [ "$TARGET_FUNCTION" = "all" ]; then
             echo "Manual selection is all. Deploying all Lambdas."
-            MATRIX="$ALL_LAMBDAS"
+            MATRIX=$(echo "$ALL_LAMBDAS" | jq -c '.')
 
           elif [ "$TARGET_FUNCTION" != "auto" ] && [ "$TARGET_FUNCTION" != "" ]; then
             echo "Manual selection is specific Lambda: $TARGET_FUNCTION"
@@ -151,7 +139,7 @@ jobs:
 
             if [ "$SHARED_CHANGED" = "true" ]; then
               echo "Shared, common, solution, or build configuration change detected. Deploying all Lambdas."
-              MATRIX="$ALL_LAMBDAS"
+              MATRIX=$(echo "$ALL_LAMBDAS" | jq -c '.')
             else
               MATRIX=$(echo "$ALL_LAMBDAS" | jq -c --argjson changed "$CHANGED_JSON" '
                 [
@@ -168,7 +156,8 @@ jobs:
           COUNT=$(echo "$MATRIX" | jq 'length')
 
           echo "Detected Lambda count: $COUNT"
-          echo "Matrix: $MATRIX"
+          echo "Matrix:"
+          echo "$MATRIX" | jq '.'
 
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
@@ -257,8 +246,8 @@ jobs:
               --verbosity normal
           done
 
-  deploy:
-    name: Deploy ${{ matrix.lambda.key }}
+  Deploy:
+    name: ${{ matrix.lambda.key }}
     runs-on: ubuntu-latest
     needs:
       - detect-changes
@@ -318,7 +307,7 @@ jobs:
           dotnet lambda package \
             --project-location "$PROJECT_DIR" \
             --configuration Release \
-            --framework net8.0 \
+            --framework net10.0 \
             --output-package "$ZIP_FILE"
 
       - name: Deploy Lambda code
